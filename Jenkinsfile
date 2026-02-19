@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 echo "Pulling code from GitHub..."
-                git branch: 'main', url: 'https://github.com/yourusername/your-repo.git'
+                git branch: 'main', url: 'https://github.com/yogeshwari101/Note_taking_application_with_integrated-CI-CD-Pipelines.git'
             }
         }
 

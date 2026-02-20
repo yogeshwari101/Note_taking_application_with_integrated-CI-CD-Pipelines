@@ -2,24 +2,24 @@ apiVersion: apps/v1
 kind: Deployment
 
 metadata:
-  name: notes-app
+  name: myapp
 
 spec:
   replicas: 2
 
   selector:
     matchLabels:
-      app: notes-app
+      app: myapp
 
   template:
     metadata:
       labels:
-        app: notes-app
+        app: myapp
 
     spec:
       containers:
-      - name: notes-app
-        image: yourdockerhubusername/notes-app:latest
+      - name: myapp
+        image: yogeshwari101/myapp:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 5000
-

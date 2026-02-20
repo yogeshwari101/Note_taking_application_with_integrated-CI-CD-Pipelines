@@ -2,61 +2,56 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "yogeshwari101/notes-app"
-        TAG = "latest"
+        IMAGE_NAME = "yogeshwari101/myapp"
+        IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
 
-        stage('Checkout Code') {
+        stage('Clone Code') {
             steps {
-                echo "Pulling code from GitHub..."
-                git branch: 'main', url: 'https://github.com/yogeshwari101/Note_taking_application_with_integrated-CI-CD-Pipelines.git'
+                checkout scm
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo "Building Docker image..."
-                sh "docker build -t $IMAGE_NAME:$TAG ."
+                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+                sh 'docker tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:latest'
             }
         }
 
-        stage('Docker Hub Login') {
+        stage('Push to Docker Hub') {
             steps {
-                echo "Logging into Docker Hub..."
                 withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-credentials',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                }
-            }
-        }
+                credentialsId: 'dockerhub',
+                usernameVariable: 'USER',
+                passwordVariable: 'PASS')]) {
 
-        stage('Push Docker Image') {
-            steps {
-                echo "Pushing image to Docker Hub..."
-                sh "docker push $IMAGE_NAME:$TAG"
+                    sh '''
+                    echo $PASS | docker login -u $USER --password-stdin
+                    docker push $IMAGE_NAME:$IMAGE_TAG
+                    docker push $IMAGE_NAME:latest
+                    '''
+                }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                echo "Deploying to Kubernetes..."
-                sh "kubectl set image deployment/notes-app notes-app=$IMAGE_NAME:$TAG --record || kubectl apply -f k8s/deployment.yaml"
+                sh '''
+                kubectl apply -f k8s/deployment.yaml
+                kubectl apply -f k8s/service.yaml
+                '''
+            }
+        }
+
+        stage('Update Kubernetes Image') {
+            steps {
+                sh '''
+                kubectl set image deployment/myapp myapp=$IMAGE_NAME:$IMAGE_TAG
+                '''
             }
         }
     }
-
-    post {
-        success {
-            echo "Deployment successful!"
-        }
-        failure {
-            echo "Pipeline failed!"
-        }
-    }
 }
-
